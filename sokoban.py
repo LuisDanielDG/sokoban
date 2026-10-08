@@ -110,26 +110,78 @@ class Sokoban:
     def abajo(self) -> None:
             if (
                 self.posicionPersonaje() == 0
-                and self.posicionPersonaje(1,0)== 4
+                and (self.posicionPersonaje(1,0) == 4 or self.posicionPersonaje(1,0) == 3)
             ):
-                #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba el camino
-                self.posicionPersonaje(1,0,0)
-                #Actualiza la posicion del personaje
-                self.personaje_fila += 1
+                if self.posicionPersonaje(1,0) == 4:
+                    #Coloca un camino donde estaba el personaje
+                    self.posicionPersonaje(0,0,4)
+                    #Coloca el personaje donde estaba el camino
+                    self.posicionPersonaje(1,0,0)
+                    #Actualiza la posicion del personaje
+                    self.personaje_fila += 1
+                else:
+                    #Coloca un camino donde estaba el personaje
+                    self.posicionPersonaje(0,0,4)
+                    #Coloca el personaje donde estaba la meta
+                    self.posicionPersonaje(1,0,6)
+                    #Actualiza la posicion del personaje
+                    self.personaje_fila += 1
+            elif(
+                 self.posicionPersonaje() == 6
+                 and (self.posicionPersonaje(1,0) == 4 or self.posicionPersonaje(1,0) == 3)
+            ):
+                if self.posicionPersonaje(1,0) == 4:
+                    #Coloca una meta donde estaba el personaje
+                    self.posicionPersonaje(0,0,3)
+                    #Coloca el personaje donde estaba el camino
+                    self.posicionPersonaje(1,0,0)
+                    #Actualiza la posicion del personaje
+                    self.personaje_fila += 1
+                else:
+                    #Coloca una meta donde estaba el personaje
+                    self.posicionPersonaje(0,0,3)
+                    #Coloca el personaje donde estaba la meta
+                    self.posicionPersonaje(1,0,6)
+                    #Actualiza la posicion del personaje
+                    self.personaje_fila += 1
 
     def arriba(self) -> None:
                 if (
                     self.posicionPersonaje() == 0
-                    and self.posicionPersonaje(-1,0)== 4
+                    and (self.posicionPersonaje(-1,0) == 4 or self.posicionPersonaje(-1,0) == 3)
                 ):
-                    #Coloca un camino donde estaba el personaje
-                    self.posicionPersonaje(0,0,4)
-                    #Coloca el personaje donde estaba el camino
-                    self.posicionPersonaje(-1,0,0)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila -= 1
+                    if self.posicionPersonaje(-1,0) == 4:
+                        #Coloca un camino donde estaba el personaje
+                        self.posicionPersonaje(0,0,4)
+                        #Coloca el personaje donde estaba el camino
+                        self.posicionPersonaje(-1,0,0)
+                        #Actualiza la posicion del personaje
+                        self.personaje_fila -= 1
+                    else:
+                        #Coloca un camino donde estaba el personaje
+                        self.posicionPersonaje(0,0,4)
+                        #Coloca el personaje donde estaba la meta
+                        self.posicionPersonaje(-1,0,6)
+                        #Actualiza la posicion del personaje
+                        self.personaje_fila -= 1
+                elif(
+                     self.posicionPersonaje() == 6
+                     and (self.posicionPersonaje(-1,0) == 4 or self.posicionPersonaje(-1,0) == 3)
+                ):
+                    if self.posicionPersonaje(-1,0) == 4:
+                        #Coloca una meta donde estaba el personaje
+                        self.posicionPersonaje(0,0,3)
+                        #Coloca el personaje donde estaba el camino
+                        self.posicionPersonaje(-1,0,0)
+                        #Actualiza la posicion del personaje
+                        self.personaje_fila -= 1
+                    else:
+                        #Coloca una meta donde estaba el personaje
+                        self.posicionPersonaje(0,0,3)
+                        #Coloca el personaje donde estaba la meta
+                        self.posicionPersonaje(-1,0,6)
+                        #Actualiza la posicion del personaje
+                        self.personaje_fila -= 1
 
     def jugar(self) -> None:
         """
