@@ -46,7 +46,7 @@ class Sokoban:
         #Asigna un simbolo a cada tipo de casilla
         simbolos = {
             0: "🙉 ",
-            1: "📦 ",
+            1: "🍌 ",
             2: "🧱 ",
             3: "🔳 ",
             4: "   ",

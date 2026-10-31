@@ -1,96 +1,91 @@
 import os
+import time
 
-class Sokoban:
+# Valores de los elementos del mapa
+PERSONAJE = int(input("Personaje: "))
+CAMINO = int(input("Camino: "))
+PARED = int(input("Pared: "))
+META = int(input("Meta: "))
+PERSONAJE_META = int(input("Personaje_meta: "))
+
+class Laberinto:
     """
-        0 - personaje
-        1 - caja
-        2 - pared
-        3 - meta
-        4 - camino
-        5 - caja_meta
-        6 - personaje_meta
+        Los valores de cada elemento se piden al iniciar el programa:
+        PERSONAJE
+        CAMINO
+        PARED
+        META
+        PERSONAJE_META
     """
 
     def __init__(self) -> None:
-        #Define los niveles disponibles
-        self.niveles = [[
-            [2,2,2,2,2,2,2,2],
-            [2,4,4,0,4,4,4,2],
-            [2,4,4,4,3,1,4,2],
-            [2,4,4,1,4,3,4,2],
-            [2,4,4,4,4,4,4,2],
-            [2,2,2,2,2,2,2,2]
-        ],
-        [
-            [2,2,2,2,2,2,2,2],
-            [2,4,4,0,4,4,4,2],
-            [2,4,1,4,3,1,4,2],
-            [2,4,4,4,4,4,4,2],
-            [2,4,4,4,4,4,3,2],
-            [2,2,2,2,2,2,2,2]
-        ],
-        [
-            [2,2,2,2,2,2,2,2],
-            [2,4,4,4,4,4,4,2],
-            [2,4,4,4,4,1,4,2],
-            [2,4,4,4,4,4,4,2],
-            [2,3,4,4,4,4,0,2],
-            [2,2,2,2,2,2,2,2]
-        ]]
-
-        #Selecciona el primer nivel
-        self.nivel_actual = 0
+        self.pasos = 0
+        self.elegirMapa()
         self.cargarNivel()
+
+    def elegirMapa(self) -> None:
+        #Muestra las opciones disponibles
+        print("Mapas disponibles:")
+        print("1 - mapa01")
+        print("2 - mapa02")
+        opcion = input("Elige un mapa: ")
+        #Repite la pregunta hasta que la opcion sea valida
+        while opcion != "1" and opcion != "2":
+            opcion = input("Opcion no valida, elige 1 o 2: ")
+        #Define el archivo del nivel segun la opcion
+        if opcion == "1":
+            self.archivo = "mapa01.lab"
+        else:
+            self.archivo = "mapa02.lab"
+        #Limpia la consola despues de elegir
+        os.system("cls" if os.name == "nt" else "clear")
 
     def imprimirMapa(self) -> None:
         #Asigna un simbolo a cada tipo de casilla
         simbolos = {
-            0: "🙉 ",
-            1: "📦 ",
-            2: "🧱 ",
-            3: "🔳 ",
-            4: "   ",
-            5: "✅ ",
-            6: "🙈 ",
+            PERSONAJE: "🙉 ",
+            CAMINO: "   ",
+            PARED: "🧱 ",
+            META: "🔳 ",
+            PERSONAJE_META: "🙈 ",
         }
         #Imprime el mapa fila por fila
         for fila in self.mapa:
             print("".join(simbolos[casilla] for casilla in fila))
 
     def cargarNivel(self) -> None:
-        #Carga el nivel actual
-        self.mapa = [fila[:] for fila in self.niveles[self.nivel_actual]]
+        #Busca el archivo en la misma carpeta que el programa
+        carpeta = os.path.dirname(os.path.abspath(__file__))
+        ruta = os.path.join(carpeta, self.archivo)
+        #Lee el archivo y convierte cada caracter en un numero
+        self.mapa = []
+        with open(ruta, "r") as archivo:
+            for linea in archivo:
+                linea = linea.strip()
+                if linea != "":
+                    self.mapa.append([int(caracter) for caracter in linea])
+        #Crea una matriz que cuenta cuantas veces se piso cada casilla
+        self.visitas = [[0 for casilla in fila] for fila in self.mapa]
         #Busca la posicion inicial del personaje
         for indice_fila, fila in enumerate(self.mapa):
             for indice_columna, casilla in enumerate(fila):
-                if casilla == 0 or casilla == 6:
+                if casilla == PERSONAJE or casilla == PERSONAJE_META:
                     #Actualiza la posicion del personaje
                     self.personaje_fila = indice_fila
                     self.personaje_columna = indice_columna
                     return
 
-    def verificarCajas(self) -> bool:
-        #Cuenta las cajas y las metas del nivel
-        cantidad_cajas = sum(casilla == 1 or casilla == 5 for fila in self.mapa for casilla in fila)
-        cantidad_metas = sum(casilla == 3 or casilla == 5 or casilla == 6 for fila in self.mapa for casilla in fila)
-        #Comprueba que el nivel tenga la misma cantidad de cajas y metas
-        if cantidad_cajas == 0 or cantidad_cajas != cantidad_metas:
-            print("El nivel no es valido, faltan cajas.")
+    def verificarMeta(self) -> bool:
+        #Comprueba que el nivel tenga una meta
+        hay_meta = any(casilla == META or casilla == PERSONAJE_META for fila in self.mapa for casilla in fila)
+        if not hay_meta:
+            print("El nivel no es valido, falta la meta.")
             return False
 
-        #Comprueba si quedan metas pendientes
-        hay_metas_pendientes = any(casilla == 3 or casilla == 6 for fila in self.mapa for casilla in fila)
-        if not hay_metas_pendientes:
+        #Comprueba si el personaje llego a la meta
+        if self.posicionPersonaje() == PERSONAJE_META:
             self.imprimirMapa()
-            print("Nivel completado.")
-            #Carga el siguiente nivel si esta disponible
-            if self.nivel_actual + 1 < len(self.niveles):
-                self.nivel_actual += 1
-                self.cargarNivel()
-                print(f"Nivel {self.nivel_actual + 1}.")
-                return True
-            #Indica que se completaron todos los niveles
-            print("Juego completado.")
+            print(f"Laberinto completado. Pasos realizados: {self.pasos}.")
             return False
 
         return True
@@ -104,412 +99,239 @@ class Sokoban:
             return self.mapa[f][c]
         #Actualiza el contenido de la casilla
         self.mapa[f][c] = valor
-         
-    def derecha(self) -> None:
+
+    def derecha(self) -> bool:
         if (
-            self.posicionPersonaje() == 0
-            and ((self.posicionPersonaje(0,1) == 4 or self.posicionPersonaje(0,1) == 3)
-            or ((self.posicionPersonaje(0,1) == 1 or self.posicionPersonaje(0,1) == 5)
-            and (self.posicionPersonaje(0,2) == 4 or self.posicionPersonaje(0,2) == 3)))
+            self.posicionPersonaje() == PERSONAJE
+            and (self.posicionPersonaje(0,1) == CAMINO or self.posicionPersonaje(0,1) == META)
         ):
-            if self.posicionPersonaje(0,1) == 4:
+            if self.posicionPersonaje(0,1) == CAMINO:
                 #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
+                self.posicionPersonaje(0,0,CAMINO)
                 #Coloca el personaje donde estaba el camino
-                self.posicionPersonaje(0,1,0)
-                #Actualiza la posicion del personaje
-                self.personaje_columna += 1
-            elif self.posicionPersonaje(0,1) == 3:
-                #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba la meta
-                self.posicionPersonaje(0,1,6)
-                #Actualiza la posicion del personaje
-                self.personaje_columna += 1
-            elif self.posicionPersonaje(0,1) == 1:
-                #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba la caja
-                self.posicionPersonaje(0,1,0)
-                if self.posicionPersonaje(0,2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,2,5)
-                elif self.posicionPersonaje(0,2) == 4:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,2,1)
+                self.posicionPersonaje(0,1,PERSONAJE)
                 #Actualiza la posicion del personaje
                 self.personaje_columna += 1
             else:
                 #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba la caja en la meta
-                self.posicionPersonaje(0,1,6)
-                if self.posicionPersonaje(0,2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,2,5)
-                else:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,2,1)
-                #Actualiza la posicion del personaje
-                self.personaje_columna += 1
-
-        elif(
-             self.posicionPersonaje() == 6
-               and ((self.posicionPersonaje(0,1) == 4 or self.posicionPersonaje(0,1) == 3)
-               or ((self.posicionPersonaje(0,1) == 1 or self.posicionPersonaje(0,1) == 5)
-               and (self.posicionPersonaje(0,2) == 4 or self.posicionPersonaje(0,2) == 3)))
-        ):
-            if self.posicionPersonaje(0,1) == 4:
-                #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
-                #Coloca el personaje donde estaba el camino
-                self.posicionPersonaje(0,1,0)
-                #Actualiza la posicion del personaje
-                self.personaje_columna += 1
-            elif self.posicionPersonaje(0,1) == 3:
-                #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
+                self.posicionPersonaje(0,0,CAMINO)
                 #Coloca el personaje donde estaba la meta
-                self.posicionPersonaje(0,1,6)
+                self.posicionPersonaje(0,1,PERSONAJE_META)
                 #Actualiza la posicion del personaje
                 self.personaje_columna += 1
-            elif self.posicionPersonaje(0,1) == 1:
+            #Indica que si se pudo mover
+            return True
+        elif (
+            self.posicionPersonaje() == PERSONAJE_META
+            and (self.posicionPersonaje(0,1) == CAMINO or self.posicionPersonaje(0,1) == META)
+        ):
+            if self.posicionPersonaje(0,1) == CAMINO:
                 #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
-                #Coloca el personaje donde estaba la caja
-                self.posicionPersonaje(0,1,0)
-                if self.posicionPersonaje(0,2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,2,5)
-                else:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,2,1)
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba el camino
+                self.posicionPersonaje(0,1,PERSONAJE)
                 #Actualiza la posicion del personaje
                 self.personaje_columna += 1
             else:
                 #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
-                #Coloca el personaje donde estaba la caja en la meta
-                self.posicionPersonaje(0,1,6)
-                if self.posicionPersonaje(0,2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,2,5)
-                else:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,2,1)
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba la meta
+                self.posicionPersonaje(0,1,PERSONAJE_META)
                 #Actualiza la posicion del personaje
                 self.personaje_columna += 1
+            #Indica que si se pudo mover
+            return True
+        #Si no se cumplio ninguna condicion, no se pudo mover
+        return False
 
-    def izquierda(self) -> None:
+    def izquierda(self) -> bool:
         if (
-            self.posicionPersonaje() == 0
-            and ((self.posicionPersonaje(0,-1) == 4 or self.posicionPersonaje(0,-1) == 3)
-            or ((self.posicionPersonaje(0,-1) == 1 or self.posicionPersonaje(0,-1) == 5)
-            and (self.posicionPersonaje(0,-2) == 4 or self.posicionPersonaje(0,-2) == 3)))
+            self.posicionPersonaje() == PERSONAJE
+            and (self.posicionPersonaje(0,-1) == CAMINO or self.posicionPersonaje(0,-1) == META)
         ):
-            if self.posicionPersonaje(0,-1) == 4:
+            if self.posicionPersonaje(0,-1) == CAMINO:
                 #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
+                self.posicionPersonaje(0,0,CAMINO)
                 #Coloca el personaje donde estaba el camino
-                self.posicionPersonaje(0,-1,0)
-                #Actualiza la posicion del personaje
-                self.personaje_columna -= 1
-            elif self.posicionPersonaje(0,-1) == 3:
-                #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba la meta
-                self.posicionPersonaje(0,-1,6)
-                #Actualiza la posicion del personaje
-                self.personaje_columna -= 1
-            elif self.posicionPersonaje(0,-1) == 1:
-                #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba la caja
-                self.posicionPersonaje(0,-1,0)
-                if self.posicionPersonaje(0,-2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,-2,5)
-                elif self.posicionPersonaje(0,-2) == 4:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,-2,1)
+                self.posicionPersonaje(0,-1,PERSONAJE)
                 #Actualiza la posicion del personaje
                 self.personaje_columna -= 1
             else:
                 #Coloca un camino donde estaba el personaje
-                self.posicionPersonaje(0,0,4)
-                #Coloca el personaje donde estaba la caja en la meta
-                self.posicionPersonaje(0,-1,6)
-                if self.posicionPersonaje(0,-2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,-2,5)
-                else:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,-2,1)
-                #Actualiza la posicion del personaje
-                self.personaje_columna -= 1
-        elif(
-             self.posicionPersonaje() == 6
-               and ((self.posicionPersonaje(0,-1) == 4 or self.posicionPersonaje(0,-1) == 3)
-               or ((self.posicionPersonaje(0,-1) == 1 or self.posicionPersonaje(0,-1) == 5)
-               and (self.posicionPersonaje(0,-2) == 4 or self.posicionPersonaje(0,-2) == 3)))
-        ):
-            if self.posicionPersonaje(0,-1) == 4:
-                #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
-                #Coloca el personaje donde estaba el camino
-                self.posicionPersonaje(0,-1,0)
-                #Actualiza la posicion del personaje
-                self.personaje_columna -= 1
-            elif self.posicionPersonaje(0,-1) == 3:
-                #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
+                self.posicionPersonaje(0,0,CAMINO)
                 #Coloca el personaje donde estaba la meta
-                self.posicionPersonaje(0,-1,6)
+                self.posicionPersonaje(0,-1,PERSONAJE_META)
                 #Actualiza la posicion del personaje
-                self.personaje_columna -= 1  
-            elif self.posicionPersonaje(0,-1) == 1:
+                self.personaje_columna -= 1
+            #Indica que si se pudo mover
+            return True
+        elif (
+            self.posicionPersonaje() == PERSONAJE_META
+            and (self.posicionPersonaje(0,-1) == CAMINO or self.posicionPersonaje(0,-1) == META)
+        ):
+            if self.posicionPersonaje(0,-1) == CAMINO:
                 #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
-                #Coloca el personaje donde estaba la caja
-                self.posicionPersonaje(0,-1,0)
-                if self.posicionPersonaje(0,-2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,-2,5)
-                else:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,-2,1)
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba el camino
+                self.posicionPersonaje(0,-1,PERSONAJE)
                 #Actualiza la posicion del personaje
                 self.personaje_columna -= 1
             else:
                 #Coloca una meta donde estaba el personaje
-                self.posicionPersonaje(0,0,3)
-                #Coloca el personaje donde estaba la caja en la meta
-                self.posicionPersonaje(0,-1,6)
-                if self.posicionPersonaje(0,-2) == 3:
-                    #Coloca la caja donde estaba la meta
-                    self.posicionPersonaje(0,-2,5)
-                else:
-                    #Coloca la caja donde estaba el camino
-                    self.posicionPersonaje(0,-2,1)
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba la meta
+                self.posicionPersonaje(0,-1,PERSONAJE_META)
                 #Actualiza la posicion del personaje
                 self.personaje_columna -= 1
+            #Indica que si se pudo mover
+            return True
+        #Si no se cumplio ninguna condicion, no se pudo mover
+        return False
 
-    def abajo(self) -> None:
-            if (
-                self.posicionPersonaje() == 0
-                and ((self.posicionPersonaje(1,0) == 4 or self.posicionPersonaje(1,0) == 3)
-                or ((self.posicionPersonaje(1,0) == 1 or self.posicionPersonaje(1,0) == 5)
-                and (self.posicionPersonaje(2,0) == 4 or self.posicionPersonaje(2,0) == 3)))
-            ):
-                if self.posicionPersonaje(1,0) == 4:
-                    #Coloca un camino donde estaba el personaje
-                    self.posicionPersonaje(0,0,4)
-                    #Coloca el personaje donde estaba el camino
-                    self.posicionPersonaje(1,0,0)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-                elif self.posicionPersonaje(1,0) == 3:
-                    #Coloca un camino donde estaba el personaje
-                    self.posicionPersonaje(0,0,4)
-                    #Coloca el personaje donde estaba la meta
-                    self.posicionPersonaje(1,0,6)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-                elif self.posicionPersonaje(1,0) == 1:
-                    #Coloca un camino donde estaba el personaje
-                    self.posicionPersonaje(0,0,4)
-                    #Coloca el personaje donde estaba la caja
-                    self.posicionPersonaje(1,0,0)
-                    if self.posicionPersonaje(2,0) == 3:
-                        #Coloca la caja donde estaba la meta
-                        self.posicionPersonaje(2,0,5)
-                    elif self.posicionPersonaje(2,0) == 4:
-                        #Coloca la caja donde estaba el camino
-                        self.posicionPersonaje(2,0,1)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-                else:
-                    #Coloca un camino donde estaba el personaje
-                    self.posicionPersonaje(0,0,4)
-                    #Coloca el personaje donde estaba la caja en la meta
-                    self.posicionPersonaje(1,0,6)
-                    if self.posicionPersonaje(2,0) == 3:
-                        #Coloca la caja donde estaba la meta
-                        self.posicionPersonaje(2,0,5)
-                    else:
-                        #Coloca la caja donde estaba el camino
-                        self.posicionPersonaje(2,0,1)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-            elif(
-                 self.posicionPersonaje() == 6
-                  and ((self.posicionPersonaje(1,0) == 4 or self.posicionPersonaje(1,0) == 3)
-                  or ((self.posicionPersonaje(1,0) == 1 or self.posicionPersonaje(1,0) == 5)
-                  and (self.posicionPersonaje(2,0) == 4 or self.posicionPersonaje(2,0) == 3)))
-            ):
-                if self.posicionPersonaje(1,0) == 4:
-                    #Coloca una meta donde estaba el personaje
-                    self.posicionPersonaje(0,0,3)
-                    #Coloca el personaje donde estaba el camino
-                    self.posicionPersonaje(1,0,0)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-                elif self.posicionPersonaje(1,0) == 3:
-                    #Coloca una meta donde estaba el personaje
-                    self.posicionPersonaje(0,0,3)
-                    #Coloca el personaje donde estaba la meta
-                    self.posicionPersonaje(1,0,6)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-                elif self.posicionPersonaje(1,0) == 1:
-                    #Coloca una meta donde estaba el personaje
-                    self.posicionPersonaje(0,0,3)
-                    #Coloca el personaje donde estaba la caja
-                    self.posicionPersonaje(1,0,0)
-                    if self.posicionPersonaje(2,0) == 3:
-                        #Coloca la caja donde estaba la meta
-                        self.posicionPersonaje(2,0,5)
-                    else:
-                        #Coloca la caja donde estaba el camino
-                        self.posicionPersonaje(2,0,1)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
-                else:
-                    #Coloca una meta donde estaba el personaje
-                    self.posicionPersonaje(0,0,3)
-                    #Coloca el personaje donde estaba la caja en la meta
-                    self.posicionPersonaje(1,0,6)
-                    if self.posicionPersonaje(2,0) == 3:
-                        #Coloca la caja donde estaba la meta
-                        self.posicionPersonaje(2,0,5)
-                    else:
-                        #Coloca la caja donde estaba el camino
-                        self.posicionPersonaje(2,0,1)
-                    #Actualiza la posicion del personaje
-                    self.personaje_fila += 1
+    def abajo(self) -> bool:
+        if (
+            self.posicionPersonaje() == PERSONAJE
+            and (self.posicionPersonaje(1,0) == CAMINO or self.posicionPersonaje(1,0) == META)
+        ):
+            if self.posicionPersonaje(1,0) == CAMINO:
+                #Coloca un camino donde estaba el personaje
+                self.posicionPersonaje(0,0,CAMINO)
+                #Coloca el personaje donde estaba el camino
+                self.posicionPersonaje(1,0,PERSONAJE)
+                #Actualiza la posicion del personaje
+                self.personaje_fila += 1
+            else:
+                #Coloca un camino donde estaba el personaje
+                self.posicionPersonaje(0,0,CAMINO)
+                #Coloca el personaje donde estaba la meta
+                self.posicionPersonaje(1,0,PERSONAJE_META)
+                #Actualiza la posicion del personaje
+                self.personaje_fila += 1
+            #Indica que si se pudo mover
+            return True
+        elif (
+            self.posicionPersonaje() == PERSONAJE_META
+            and (self.posicionPersonaje(1,0) == CAMINO or self.posicionPersonaje(1,0) == META)
+        ):
+            if self.posicionPersonaje(1,0) == CAMINO:
+                #Coloca una meta donde estaba el personaje
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba el camino
+                self.posicionPersonaje(1,0,PERSONAJE)
+                #Actualiza la posicion del personaje
+                self.personaje_fila += 1
+            else:
+                #Coloca una meta donde estaba el personaje
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba la meta
+                self.posicionPersonaje(1,0,PERSONAJE_META)
+                #Actualiza la posicion del personaje
+                self.personaje_fila += 1
+            #Indica que si se pudo mover
+            return True
+        #Si no se cumplio ninguna condicion, no se pudo mover
+        return False
 
-    def arriba(self) -> None:
-                if (
-                    self.posicionPersonaje() == 0
-                    and ((self.posicionPersonaje(-1,0) == 4 or self.posicionPersonaje(-1,0) == 3)
-                    or ((self.posicionPersonaje(-1,0) == 1 or self.posicionPersonaje(-1,0) == 5)
-                    and (self.posicionPersonaje(-2,0) == 4 or self.posicionPersonaje(-2,0) == 3)))
-                ):
-                    if self.posicionPersonaje(-1,0) == 4:
-                        #Coloca un camino donde estaba el personaje
-                        self.posicionPersonaje(0,0,4)
-                        #Coloca el personaje donde estaba el camino
-                        self.posicionPersonaje(-1,0,0)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                    elif self.posicionPersonaje(-1,0) == 3:
-                        #Coloca un camino donde estaba el personaje
-                        self.posicionPersonaje(0,0,4)
-                        #Coloca el personaje donde estaba la meta
-                        self.posicionPersonaje(-1,0,6)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                    elif self.posicionPersonaje(-1,0) == 1:
-                        #Coloca un camino donde estaba el personaje
-                        self.posicionPersonaje(0,0,4)
-                        #Coloca el personaje donde estaba la caja
-                        self.posicionPersonaje(-1,0,0)
-                        if self.posicionPersonaje(-2,0) == 3:
-                            #Coloca la caja donde estaba la meta
-                            self.posicionPersonaje(-2,0,5)
-                        elif self.posicionPersonaje(-2,0) == 4:
-                            #Coloca la caja donde estaba el camino
-                            self.posicionPersonaje(-2,0,1)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                    else:
-                        #Coloca un camino donde estaba el personaje
-                        self.posicionPersonaje(0,0,4)
-                        #Coloca el personaje donde estaba la caja en la meta
-                        self.posicionPersonaje(-1,0,6)
-                        if self.posicionPersonaje(-2,0) == 3:
-                            #Coloca la caja donde estaba la meta
-                            self.posicionPersonaje(-2,0,5)
-                        else:
-                            #Coloca la caja donde estaba el camino
-                            self.posicionPersonaje(-2,0,1)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                elif(
-                     self.posicionPersonaje() == 6
-                     and ((self.posicionPersonaje(-1,0) == 4 or self.posicionPersonaje(-1,0) == 3)
-                     or ((self.posicionPersonaje(-1,0) == 1 or self.posicionPersonaje(-1,0) == 5)
-                     and (self.posicionPersonaje(-2,0) == 4 or self.posicionPersonaje(-2,0) == 3)))
-                ):
-                    if self.posicionPersonaje(-1,0) == 4:
-                        #Coloca una meta donde estaba el personaje
-                        self.posicionPersonaje(0,0,3)
-                        #Coloca el personaje donde estaba el camino
-                        self.posicionPersonaje(-1,0,0)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                    elif self.posicionPersonaje(-1,0) == 3:
-                        #Coloca una meta donde estaba el personaje
-                        self.posicionPersonaje(0,0,3)
-                        #Coloca el personaje donde estaba la meta
-                        self.posicionPersonaje(-1,0,6)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                    elif self.posicionPersonaje(-1,0) == 1:
-                        #Coloca una meta donde estaba el personaje
-                        self.posicionPersonaje(0,0,3)
-                        #Coloca el personaje donde estaba la caja
-                        self.posicionPersonaje(-1,0,0)
-                        if self.posicionPersonaje(-2,0) == 3:
-                            #Coloca la caja donde estaba la meta
-                            self.posicionPersonaje(-2,0,5)
-                        else:
-                            #Coloca la caja donde estaba el camino
-                            self.posicionPersonaje(-2,0,1)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
-                    else:
-                        #Coloca una meta donde estaba el personaje
-                        self.posicionPersonaje(0,0,3)
-                        #Coloca el personaje donde estaba la caja en la meta
-                        self.posicionPersonaje(-1,0,6)
-                        if self.posicionPersonaje(-2,0) == 3:
-                            #Coloca la caja donde estaba la meta
-                            self.posicionPersonaje(-2,0,5)
-                        else:
-                            #Coloca la caja donde estaba el camino
-                            self.posicionPersonaje(-2,0,1)
-                        #Actualiza la posicion del personaje
-                        self.personaje_fila -= 1
+    def arriba(self) -> bool:
+        if (
+            self.posicionPersonaje() == PERSONAJE
+            and (self.posicionPersonaje(-1,0) == CAMINO or self.posicionPersonaje(-1,0) == META)
+        ):
+            if self.posicionPersonaje(-1,0) == CAMINO:
+                #Coloca un camino donde estaba el personaje
+                self.posicionPersonaje(0,0,CAMINO)
+                #Coloca el personaje donde estaba el camino
+                self.posicionPersonaje(-1,0,PERSONAJE)
+                #Actualiza la posicion del personaje
+                self.personaje_fila -= 1
+            else:
+                #Coloca un camino donde estaba el personaje
+                self.posicionPersonaje(0,0,CAMINO)
+                #Coloca el personaje donde estaba la meta
+                self.posicionPersonaje(-1,0,PERSONAJE_META)
+                #Actualiza la posicion del personaje
+                self.personaje_fila -= 1
+            #Indica que si se pudo mover
+            return True
+        elif (
+            self.posicionPersonaje() == PERSONAJE_META
+            and (self.posicionPersonaje(-1,0) == CAMINO or self.posicionPersonaje(-1,0) == META)
+        ):
+            if self.posicionPersonaje(-1,0) == CAMINO:
+                #Coloca una meta donde estaba el personaje
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba el camino
+                self.posicionPersonaje(-1,0,PERSONAJE)
+                #Actualiza la posicion del personaje
+                self.personaje_fila -= 1
+            else:
+                #Coloca una meta donde estaba el personaje
+                self.posicionPersonaje(0,0,META)
+                #Coloca el personaje donde estaba la meta
+                self.posicionPersonaje(-1,0,PERSONAJE_META)
+                #Actualiza la posicion del personaje
+                self.personaje_fila -= 1
+            #Indica que si se pudo mover
+            return True
+        #Si no se cumplio ninguna condicion, no se pudo mover
+        return False
+
+    def intentarMover(self, direccion: int) -> bool:
+        #Intenta moverse en la direccion indicada y devuelve si pudo
+        if direccion == 0:
+            return self.derecha()
+        elif direccion == 1:
+            return self.abajo()
+        elif direccion == 2:
+            return self.izquierda()
+        else:
+            return self.arriba()
+
+    def mover(self) -> None:
+        #Direcciones: 0 derecha, 1 abajo, 2 izquierda, 3 arriba
+        cambios_fila = [0, 1, 0, -1]
+        cambios_columna = [1, 0, -1, 0]
+        #Cuenta una visita mas a la casilla donde esta el personaje
+        self.visitas[self.personaje_fila][self.personaje_columna] += 1
+        mejor_direccion = None
+        menos_visitas = None
+        #Busca la casilla vecina que no sea pared y tenga menos visitas
+        for direccion in range(4):
+            fila = self.personaje_fila + cambios_fila[direccion]
+            columna = self.personaje_columna + cambios_columna[direccion]
+            if self.mapa[fila][columna] != PARED:
+                if menos_visitas is None or self.visitas[fila][columna] < menos_visitas:
+                    menos_visitas = self.visitas[fila][columna]
+                    mejor_direccion = direccion
+        #Se mueve hacia esa casilla
+        self.intentarMover(mejor_direccion)
+
+    def algoritmo(self) -> None:
+        #Limite de pasos para no quedar en un ciclo infinito
+        self.pasos = 0
+        limite = 1000
+        #Repite hasta que el personaje llegue a la meta
+        while self.posicionPersonaje() != PERSONAJE_META:
+            self.mover()
+            self.pasos += 1
+            #Limpia la consola y muestra el avance
+            os.system("cls" if os.name == "nt" else "clear")
+            if self.posicionPersonaje() != PERSONAJE_META:
+                self.imprimirMapa()
+                #Pausa para poder ver el movimiento
+                time.sleep(0.3)
+            #Si se pasa del limite, el personaje no pudo llegar
+            if self.pasos >= limite:
+                print("El personaje no encontro la meta.")
+                exit()
 
     def jugar(self) -> None:
-        """
-            a - Izquierda
-            d - Derecha
-            w - Arriba
-            s - Abajo
-            r - Reiniciar nivel
-        """
         #Imprime el mapa antes del movimiento
         self.imprimirMapa()
-        #Solicita la direccion del movimiento
-        movimiento = input("Movimiento: ")
-        #Ejecuta el movimiento seleccionado
-        if movimiento == "d":
-            self.derecha()
-        elif movimiento == "a":
-            self.izquierda()
-        elif movimiento == "w":
-            self.arriba()
-        elif movimiento == "s":
-            self.abajo()
-        elif movimiento == "r":
-            #Reinicia el nivel actual
-            self.cargarNivel()
-        #Limpia la consola despues del movimiento
-        os.system("cls" if os.name == "nt" else "clear")
+        #Se llama al algoritmo para resolverlo
+        self.algoritmo()
 
 
-soko = Sokoban()
-while soko.verificarCajas():
-    soko.jugar()
+laberinto = Laberinto()
+while laberinto.verificarMeta():
+    laberinto.jugar()

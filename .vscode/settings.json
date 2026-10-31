@@ -1,0 +1,13 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "printf": true,
+        "/^python - <<'PY'\nimport builtins\nimport contextlib\nimport io\nimport runpy\nfrom unittest\\.mock import patch\n\noutput = io\\.StringIO\\(\\)\nwith patch\\.object\\(builtins, \"input\", side_effect=\\[\"0\", \"1\", \"2\", \"3\", \"8\", \"1\"\\]\\), \\\\\n     patch\\(\"os\\.system\", return_value=0\\), patch\\(\"time\\.sleep\"\\), \\\\\n     contextlib\\.redirect_stdout\\(output\\):\n    runpy\\.run_path\\(\"sokoban_algoritmo\\.py\"\\)\ntext = output\\.getvalue\\(\\)\nassert text\\.count\\(\"🙈\"\\) == 1, f\"Expected one final map, got \\{text\\.count\\('🙈'\\)\\} final-map markers\"\nassert text\\.count\\(\"Laberinto completado\\. Pasos realizados:\"\\) == 1\nprint\\(text\\.splitlines\\(\\)\\[-8:\\]\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python - <<'PY'\nimport builtins\nimport contextlib\nimport io\nimport runpy\nfrom unittest\\.mock import patch\n\noutput = io\\.StringIO\\(\\)\nwith patch\\.object\\(builtins, \"input\", side_effect=\\[\"9\", \"0\", \"1\", \"7\", \"8\", \"2\"\\]\\), \\\\\n     patch\\(\"os\\.system\", return_value=0\\), patch\\(\"time\\.sleep\"\\), \\\\\n     contextlib\\.redirect_stdout\\(output\\):\n    runpy\\.run_path\\(\"sokoban_algoritmo\\.py\"\\)\ntext = output\\.getvalue\\(\\)\nassert text\\.count\\(\"🙈\"\\) == 1, f\"Expected one final map, got \\{text\\.count\\('🙈'\\)\\} final-map markers\"\nassert text\\.count\\(\"Laberinto completado\\. Pasos realizados:\"\\) == 1\nresult = text\\.rsplit\\(\"Pasos realizados: \", 1\\)\\[1\\]\\.split\\(\"\\.\", 1\\)\\[0\\]\nassert int\\(result\\) > 0, f\"Expected positive step count, got \\{result\\}\"\nprint\\(f\"Final map markers: \\{text\\.count\\('🙈'\\)\\}; reported steps: \\{result\\}\"\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
